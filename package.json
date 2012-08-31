@@ -1,0 +1,28 @@
+{
+  "name": "grunt-qunit-ant-junit-xml-reporter",
+  "description": "Ant JUnit compatible XML Reporter for Grunt QUnit task.",
+  "version": "0.1.0",
+  "homepage": "https://github.com/ArturDorochowicz/grunt-qunit-ant-junit-xml-reporter",
+  "author": {
+    "name": "Artur Dorochowicz"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ArturDorochowicz/grunt-qunit-ant-junit-xml-reporter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ArturDorochowicz/grunt-qunit-ant-junit-xml-reporter/issues"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/ArturDorochowicz/grunt-qunit-ant-junit-xml-reporter/blob/master/LICENSE"
+    }
+  ],
+  "devDependencies": {
+    "grunt": "~0.4"
+  },
+  "keywords": [
+    "gruntplugin"
+  ]
+}

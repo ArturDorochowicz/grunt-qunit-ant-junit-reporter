@@ -1,1 +1,1 @@
-Ant JUnit-compatible XML Reporter for Grunt Qunit tasks.
+Ant JUnit compatible XML Reporter for Grunt Qunit task.
