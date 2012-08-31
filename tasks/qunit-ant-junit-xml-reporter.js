@@ -6,14 +6,16 @@ module.exports = function (grunt) {
 		var target = targets[targetName];
 		if (!target) {
 			target = {
-				testSuites: [{
-					name: '',
-					timestamp: new Date(),
-					tests: []
-				}],
+				testSuites: [],
 				currentTestSuite: null,
 				currentTest: null
 			}
+			// 'Dummy' test suite for tests that are not in a module.
+			target.testSuites.push({
+				name: '',
+				timestamp: new Date(),
+				tests: []
+			});
 			targets[targetName] = target;
 		}
 		return target;
@@ -30,7 +32,7 @@ module.exports = function (grunt) {
 		}
 	  }
 
-	  return '<' + elementName + ' ' + formattedAttributes.join(' ') + '>';
+	  return '<' + elementName +  (formattedAttributes.length ? ' ' : '') + formattedAttributes.join(' ') + '>';
 	}
 
 	function endXmlElement(elementName) {
@@ -51,83 +53,12 @@ module.exports = function (grunt) {
 		.replace(/</g, '&lt;');
 	}
 
+	function xmlCData(text) {
+      return '<![CDATA[' + String(text).replace(/\]\]>/g, ']]]]><![CDATA[>') + ']]>';
+    };
 
-	grunt.event.on('qunit.moduleStart', function (name) {
-		var target = getTarget(grunt.task.current.target),
-			testSuite = {
-				name: name,
-				timestamp: new Date(),
-				tests: []
-			};
-
-		target.testSuites.push(testSuite);
-		target.currentTestSuite = testSuite;
-
-		grunt.verbose.writeln('qunit.moduleStart: ' + name);
-	});
-
-	grunt.event.on('qunit.moduleDone', function (name, failed, passed, total) {
-		var target = getTarget(grunt.task.current.target);
-
-		target.currentTestSuite = null;
-		target.currentTest = null;
-
-		grunt.verbose.writeln('qunit.moduleDone: ' + name + failed + passed + total);
-	});
-
-	grunt.event.on('qunit.testStart', function (name) {
-		var target = getTarget(grunt.task.current.target),
-			test = {
-				name: name,
-				startTimestamp: new Date(),
-				assertions: []
-			};
-
-		if (target.currentTestSuite) {
-			target.currentTestSuite.tests.push(test);
-		} else {
-			target.testSuites[0].tests.push(test);
-		}
-
-		target.currentTest = test;
-
-		grunt.verbose.writeln('qunit.testStart: ', name);
-	});
-
-	grunt.event.on('qunit.testDone', function (name, failed, passed, total) {
-		var target = getTarget(grunt.task.current.target),
-			test = target.currentTest;
-
-		test.endTimestamp = new Date();
-		test.time = test.endTimestamp - test.startTimestamp;
-		test.failed = failed;
-		test.passed = passed;
-		test.total = total;
-
-		target.currentTest = null;
-
-		grunt.verbose.writeln('qunit.testDone: ', name, failed, passed, total);
-	});
-
-	grunt.event.on('qunit.log', function (result, actual, expected, message, source) {
-		var target = getTarget(grunt.task.current.target),
-			test = target.currentTest;
-
-		test.assertions.push({
-			result: result,
-			actual: actual,
-			expected: expected,
-			message: message,
-			source: source
-		});
-
-		grunt.verbose.writeln('qunit.log: ', result, actual, expected, message, source);
-	});
-
-	grunt.event.on('qunit.done', function (failed, passed, total, duration) {
-		var targetName = grunt.task.current.target,
-			target = getTarget(targetName),
-			x = '';
+	function formatReport(target) {
+		var x = '';
 
 		x += beginXmlElement('testsuites', {});
 
@@ -175,7 +106,89 @@ module.exports = function (grunt) {
 
 		x += endXmlElement('testsuites');
 
-		grunt.verbose.writeln('qunit.done: ' + x, failed, passed, total, duration);
+		return x;
+	}
+
+	grunt.event.on('qunit.moduleStart', function (name) {
+		var target = getTarget(grunt.task.current.target),
+			testSuite = {
+				name: name,
+				timestamp: new Date(),
+				tests: []
+			};
+
+		target.testSuites.push(testSuite);
+		target.currentTestSuite = testSuite;
+	});
+
+	grunt.event.on('qunit.moduleDone', function (name, failed, passed, total) {
+		var target = getTarget(grunt.task.current.target);
+
+		target.currentTestSuite = null;
+		target.currentTest = null;
+	});
+
+	grunt.event.on('qunit.testStart', function (name) {
+		var target = getTarget(grunt.task.current.target),
+			test = {
+				name: name,
+				startTimestamp: new Date(),
+				assertions: []
+			};
+
+		if (target.currentTestSuite) {
+			target.currentTestSuite.tests.push(test);
+		} else {
+			target.testSuites[0].tests.push(test);
+		}
+
+		target.currentTest = test;
+	});
+
+	grunt.event.on('qunit.testDone', function (name, failed, passed, total) {
+		var target = getTarget(grunt.task.current.target),
+			test = target.currentTest;
+
+		test.endTimestamp = new Date();
+		test.time = test.endTimestamp - test.startTimestamp;
+		test.failed = failed;
+		test.passed = passed;
+		test.total = total;
+
+		target.currentTest = null;
+	});
+
+	grunt.event.on('qunit.log', function (result, actual, expected, message, source) {
+		var target = getTarget(grunt.task.current.target),
+			test = target.currentTest;
+
+		test.assertions.push({
+			result: result,
+			actual: actual,
+			expected: expected,
+			message: message,
+			source: source
+		});
+	});
+
+	grunt.event.on('qunit.done', function (failed, passed, total, duration) {
+		var fileName = grunt.task.current.options().xmlReport,
+			target,
+			report;
+
+		// Out of necessity there is a large inefficiency here.
+		// At the moment there is no event to signify end of target (nor end of task).
+		// The content of the report is rendered and written to the file on qunit.done.
+		// It is invoked after each file, so it's possible that the file is repeatedly
+		// overwritten with longer and longer report.
+		// Unfortunately, qunit.done is the only thing available.
+
+		if (fileName) {
+			target = getTarget(grunt.task.current.target),
+			report = formatReport(target);
+
+			grunt.file.write(fileName, report);
+		}
 	});
 };
 

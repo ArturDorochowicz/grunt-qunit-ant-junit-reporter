@@ -1,8 +1,14 @@
 module.exports = function (grunt) {
 	grunt.initConfig({
 		qunit: {
-			First: ['first.html'],
-			Second: []
+			SetA: {
+				files: { src: ['first.html', 'second.html'] },
+				options: { xmlReport: 'seta.xml' }
+			},
+			SetB: {
+				files: { src: ['third.html'] },
+				options: { xmlReport: 'setb.xml' }
+			}
 		}
 	});
 
