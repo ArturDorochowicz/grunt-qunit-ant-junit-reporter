@@ -1,4 +1,5 @@
 module.exports = function (grunt) {
+	"use strict";
 
 	var targets = {};
 
@@ -9,7 +10,7 @@ module.exports = function (grunt) {
 				testSuites: [],
 				currentTestSuite: null,
 				currentTest: null
-			}
+			};
 			// 'Dummy' test suite for tests that are not in a module.
 			target.testSuites.push({
 				name: '',
@@ -23,39 +24,41 @@ module.exports = function (grunt) {
 
 
 	function beginXmlElement(elementName, attributes) {
-	  var formattedAttributes = [],
-		attribute;
+		var formattedAttributes = [],
+			attribute;
 
-	  for (attribute in attributes || {}) {
-		if (Object.prototype.hasOwnProperty.call(attributes, attribute)) {
-		  formattedAttributes.push(attribute + '="' + xmlAttributeEncode(attributes[attribute]) + '"');
+		for (attribute in attributes || {}) {
+			if (Object.prototype.hasOwnProperty.call(attributes, attribute)) {
+				formattedAttributes.push(attribute + '="' + xmlAttributeEncode(attributes[attribute]) + '"');
+			}
 		}
-	  }
 
-	  return '<' + elementName +  (formattedAttributes.length ? ' ' : '') + formattedAttributes.join(' ') + '>';
+		return '<' + elementName +  (formattedAttributes.length ? ' ' : '') + formattedAttributes.join(' ') + '>';
 	}
 
 	function endXmlElement(elementName) {
-	  return '</' + elementName + '>';
+		return '</' + elementName + '>';
 	}
 
+/*
 	function xmlEncode(text) {
-	  return String(text)
-		.replace(/&/g, '&amp;')
-		.replace(/</g, '&lt;');
+		return String(text)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;');
 	}
+*/
 
 	function xmlAttributeEncode(text) {
-	  return String(text)
-		.replace(/&/g, '&amp;')
-		.replace(/"/g, '&quot;')
-		.replace(/'/g, '&apos;')
-		.replace(/</g, '&lt;');
+		return String(text)
+			.replace(/&/g, '&amp;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&apos;')
+			.replace(/</g, '&lt;');
 	}
 
 	function xmlCData(text) {
-      return '<![CDATA[' + String(text).replace(/\]\]>/g, ']]]]><![CDATA[>') + ']]>';
-    };
+		return '<![CDATA[' + String(text).replace(/\]\]>/g, ']]]]><![CDATA[>') + ']]>';
+	}
 
 	function formatReport(target) {
 		var x = '';
@@ -64,7 +67,7 @@ module.exports = function (grunt) {
 
 		target.testSuites.forEach(function (testSuite, index) {
 			if (index === 0 && !testSuite.tests.length) {
-			  return;
+				return;
 			}
 
 			x += beginXmlElement('testsuite', {
@@ -78,7 +81,7 @@ module.exports = function (grunt) {
 					name: test.name,
 					assertions: test.total,
 					time: test.time / 1000
-				  });
+				});
 
 				test.assertions.forEach(function (assertion) {
 					if (assertion.result) {
